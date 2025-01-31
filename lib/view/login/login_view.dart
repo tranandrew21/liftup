@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lift_up/view/home/home_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lift_up/database/dbhelper.dart';
+import 'register.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -13,39 +16,70 @@ class _LoginViewState extends State<LoginView>
   late AnimationController _animationController;
   late Animation<double> _logoAnimation;
   late Animation<double> _formAnimation;
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
 
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   bool _rememberMe = false; // tracks state of remember me button
 
-  final String validUsername = "user";
-  final String validPassword = "password";
-
+  // Future<void> _login() async {
+  //   if (_usernameController.text == validUsername &&
+  //       _passwordController.text == validPassword) {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     await prefs.setBool('rememberMe', _rememberMe);
+  //     Navigator.pushReplacementNamed(context, '/home');
+  //   } else {
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) {
+  //         return AlertDialog(
+  //           title: Text("Login Failed"),
+  //           content: Text("Invalid username or password."),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () {
+  //                 Navigator.pop(context);
+  //               },
+  //               child: Text("OK"),
+  //             ),
+  //           ],
+  //         );
+  //       },
+  //     );
+  //   }
+  // }
   Future<void> _login() async {
-    if (_usernameController.text == validUsername &&
-        _passwordController.text == validPassword) {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    final user = await DatabaseHelper.instance.loginUser(email, password);
+
+    if (user != null) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('rememberMe', _rememberMe);
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text("Login Failed"),
-            content: Text("Invalid username or password."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text("OK"),
-              ),
-            ],
-          );
-        },
+      if (_rememberMe) {
+        await prefs.setBool('rememberMe', true);
+      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeView()),
       );
+    } else {
+      _showErrorDialog();
     }
+  }
+
+  void _showErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Login Failed"),
+        content: Text("Invalid email or password."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("OK"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _checkRememberMe() async {
@@ -53,9 +87,10 @@ class _LoginViewState extends State<LoginView>
     final isRemembered = prefs.getBool('rememberMe') ?? false;
 
     if (isRemembered && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, '/home');
-      });
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeView()),
+      );
     }
   }
   // Check if "Remember Me" is enabled and auto-login if true
@@ -68,7 +103,7 @@ class _LoginViewState extends State<LoginView>
     // Initialize the animation controller
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 1),
     );
 
     // Logo animation: moves upward
@@ -153,14 +188,14 @@ class _LoginViewState extends State<LoginView>
                           ),
                         ),
                         const SizedBox(height: 30),
-                        Text("Username:",
+                        Text("Email:",
                             style: TextStyle(
                                 fontSize: 16,
                                 color: Colors.black,
                                 fontWeight: FontWeight.w600)),
                         const SizedBox(height: 5),
                         TextField(
-                          controller: _usernameController,
+                          controller: _emailController,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.grey[300],
@@ -225,15 +260,35 @@ class _LoginViewState extends State<LoginView>
                                 Text("Remember Me"),
                               ],
                             ),
-                            TextButton(
-                              onPressed: () {},
-                              child: const Text(
-                                "Forgot Login",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 16,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context, 
+                                      MaterialPageRoute(builder: (context) => RegisterView()),
+                                    );
+                                  },
+                                  child: const Text(
+                                    "Register",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                TextButton(
+                                  onPressed: () {},
+                                  child: const Text(
+                                    "Forgot Login",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

@@ -26,10 +26,14 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:lift_up/database/dbhelper.dart';
 import 'package:lift_up/view/home/home_view.dart';
 import 'package:lift_up/view/login/login_view.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // ✅ Ensure async code runs before app starts
+
+  await DatabaseHelper.instance.database; // ✅ Force SQLite initialization
   runApp(MyApp());
 }
 
